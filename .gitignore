@@ -1,0 +1,183 @@
+# ==================== Environment Variables ====================
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ==================== Frontend / Node ====================
+# Dependencies
+frontend/node_modules/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Build outputs
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# IDE
+frontend/.idea/
+frontend/.vscode/
+frontend/*.swp
+frontend/*.swo
+frontend/*~
+frontend/.DS_Store
+
+# Package manager lock files (optional - uncomment if using npm ci)
+# frontend/package-lock.json
+
+# ==================== Backend / Python ====================
+# Virtual environments
+backend/venv/
+backend/env/
+backend/.venv/
+backend/.env/
+venv/
+env/
+ENV/
+
+# Python cache
+backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+*.py[cod]
+*$py.class
+
+# IDE
+backend/.idea/
+backend/.vscode/
+backend/*.swp
+backend/*.swo
+backend/*~
+backend/.DS_Store
+
+# Pip
+backend/pip-log.txt
+backend/pip-delete-this-directory.txt
+backend/*.egg-info/
+backend/dist/
+backend/build/
+
+# Pytest
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
+# Database files (if using SQLite)
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+
+# ==================== IDE & Editor Files ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# VSCode workspace
+*.code-workspace
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# PyCharm
+*.iml
+.idea/
+
+# Vim
+.vim/
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+
+# ==================== OS Files ====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+desktop.ini
+$RECYCLE.BIN/
+
+# ==================== Logs ====================
+*.log
+logs/
+backend/logs/
+frontend/logs/
+
+# ==================== Temporary Files ====================
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+.temp/
+
+# ==================== Docker (if using locally) ====================
+.dockerignore
+
+# ==================== Git ====================
+.git/
+.gitattributes
+
+# ==================== CI/CD ====================
+.github/workflows/temp/
+.gitlab-ci/temp/
+
+# ==================== Build & Distribution ====================
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.egg
+.pytest_cache/
+
+# ==================== Optional: Misc ====================
+# Uncomment if you generate these
+# *.pdf
+# *.xlsx
+# *.csv
+
+# Machine Learning Models (if any)
+backend/models/*.pkl
+backend/models/*.h5
+backend/models/*.pt
+
+# ==================== Project Specific ====================
+# Backend
+backend/.env
+backend/venv/
+backend/app/__pycache__/
+backend/app/services/__pycache__/
+backend/app/models/__pycache__/
+
+# Frontend
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+
+# IDE Settings (keep .gitignore but ignore settings)
+.vscode/settings.json
+.vscode/launch.json
+.idea/workspace.xml
+.idea/tasks.xml
+
+# ==================== Database ====================
+*.db
+*.sqlite
+*.sqlite3
+database/
+
+# ==================== Cache ====================
+.cache/
+*.cache
+frontend/.eslintcache
