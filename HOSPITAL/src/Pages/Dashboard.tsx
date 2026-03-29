@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AutoCADMap } from "../components/AutoCADMap";
 import HospitalScene from "../components/3D/HospitalScene";
 import SideNavbar from "./Navbar";
+import { getWards, getInitialData, connectWebSocket } from "../services/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface WardStatus {
@@ -245,13 +246,139 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(t);
   }, []);
 
-  // API polling
+  // Fetch backend data on mount
   useEffect(() => {
+    const initializeData = async () => {
+      try {
+        // Fetch wards configuration
+        const wardsRes = await getWards();
+        if (wardsRes.data?.wards) {
+          const backendWards = wardsRes.data.wards.map((w: any) => ({
+            id: w.id,
+            name: w.name,
+            isAlert: false,
+            anomalyScore: Math.random() * 0.8,
+          }));
+          setWards(backendWards);
+          setSelectedWard(backendWards[0]);
+        }
+
+        // Fetch initial clinical data
+        const dataRes = await getInitialData();
+        if (dataRes.data) {
+          console.log("Initial data:", dataRes.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch backend data:", error);
+        // Fallback to default data
+        setWards(WARD_LIST);
+        setSelectedWard(WARD_LIST[0]);
+      }
+    };
+
+    initializeData();
+  }, []);
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+
+    try {
+      ws = connectWebSocket(
+        (data: any) => {
+          console.log("WebSocket message:", data.type, data);
+          setWsConnected(true);
+
+          // Handle different message types from backend
+          if (data.type === "alert") {
+            // Add new alert
+            const newAlert: WardStatus = {
+              id: data.payload.wardId,
+              name: data.payload.wardName,
+              isAlert: true,
+              anomalyScore: data.payload.severity === "critical" ? 0.9 : 0.6,
+            };
+            setLiveAlerts(prev => {
+              const existing = prev.find(a => a.id === newAlert.id);
+              if (existing) return prev;
+              return [...prev, newAlert];
+            });
+            console.log("✓ Alert received:", newAlert.name, data.payload.severity);
+          } 
+          else if (data.type === "update") {
+            // Update ward status
+            setWards(prev => prev.map(w => {
+              if (w.id === data.payload.wardId) {
+                const scoreMap: Record<string, number> = {
+                  "critical": 0.85,
+                  "warning": 0.55,
+                  "normal": 0.25,
+                };
+                return {
+                  ...w,
+                  anomalyScore: scoreMap[data.payload.status] || w.anomalyScore,
+                  isAlert: data.payload.status !== "normal",
+                };
+              }
+              return w;
+            }));
+
+            // Update live alerts list
+            setLiveAlerts(prev => {
+              if (data.payload.status === "normal") {
+                return prev.filter(a => a.id !== data.payload.wardId);
+              } else {
+                const exists = prev.find(a => a.id === data.payload.wardId);
+                if (!exists) {
+                  return [...prev, {
+                    id: data.payload.wardId,
+                    name: data.payload.wardId.replace(/_/g, " "),
+                    isAlert: true,
+                    anomalyScore: data.payload.status === "critical" ? 0.9 : 0.6,
+                  }];
+                }
+                return prev;
+              }
+            });
+          }
+          else if (data.type === "stats") {
+            // Stats update - log for debugging
+            console.log("📊 Hospital stats:", {
+              normal: data.payload.normal_wards,
+              warning: data.payload.warning_wards,
+              critical: data.payload.critical_wards,
+            });
+          }
+          else if (data.type === "patient_record") {
+            // Log patient records
+            console.log("📋 Patient record received:", data.payload);
+          }
+        },
+        (error: any) => {
+          console.error("WebSocket error:", error);
+          setWsConnected(false);
+        }
+      );
+    } catch (error) {
+      console.error("WebSocket connection failed:", error);
+      setWsConnected(false);
+    }
+
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, []);
+
+  // Legacy API polling (fallback if WebSocket unavailable)
+  useEffect(() => {
+    if (wsConnected) return; // Skip if WebSocket is connected
+
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:8000/status");
+        const res = await fetch("http://localhost:8000/health");
         const data = await res.json();
-        setLiveAlerts(data.red_alert_wards);
         setWsConnected(true);
       } catch {
         setWsConnected(false);
@@ -260,7 +387,7 @@ const Dashboard: React.FC = () => {
     fetchData();
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [wsConnected]);
 
   const handleWardClick = useCallback((wardId: string) => {
     const found = wards.find(w => w.id === wardId);

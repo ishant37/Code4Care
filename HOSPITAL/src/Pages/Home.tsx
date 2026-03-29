@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { getWards, connectWebSocket } from "../services/api";
 
-const WARDS = [
+const DEFAULT_WARDS = [
   { name: "ICU Ward", color: "#00d4ff", status: "critical", count: 5 },
   { name: "General Ward", color: "#00ff41", status: "normal", count: 1 },
   { name: "Surgery", color: "#8800ff", status: "warning", count: 3 },
@@ -96,7 +97,30 @@ function GridBackground() {
 }
 
 function WardTicker() {
-  const items = [...WARDS, ...WARDS];
+  const [wards, setWards] = useState(DEFAULT_WARDS);
+
+  useEffect(() => {
+    const fetchWards = async () => {
+      try {
+        const res = await getWards();
+        if (res.data?.wards) {
+          const mappedWards = res.data.wards.map((w: any) => ({
+            name: w.name,
+            color: "#00d4ff",
+            status: Math.random() > 0.5 ? "normal" : "warning",
+            count: Math.floor(Math.random() * 5),
+          }));
+          setWards(mappedWards);
+        }
+      } catch (error) {
+        console.error("Failed to fetch wards:", error);
+      }
+    };
+
+    fetchWards();
+  }, []);
+
+  const items = [...wards, ...wards];
   return (
     <div style={{
       overflow: "hidden",
@@ -135,7 +159,7 @@ function WardTicker() {
   );
 }
 
-function WardMiniMap() {
+function WardMiniMap({ wards }: { wards: typeof DEFAULT_WARDS }) {
   const [hovered, setHovered] = useState<number | null>(null);
   return (
     <div style={{
@@ -149,7 +173,7 @@ function WardMiniMap() {
         <span style={{ fontSize: 10, color: "#ff0040", animation: "blink 1.2s infinite" }}>● REC</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-        {WARDS.map((ward, i) => (
+        {wards.map((ward, i) => (
           <div
             key={ward.name}
             onMouseEnter={() => setHovered(i)}
@@ -238,10 +262,33 @@ function AlertFeed() {
 
 export default function HomePage() {
   const [loaded, setLoaded] = useState(false);
+  const [wards, setWards] = useState(DEFAULT_WARDS);
 
   useEffect(() => {
     const t = setTimeout(() => setLoaded(true), 100);
     return () => clearTimeout(t);
+  }, []);
+
+  // Fetch wards from backend
+  useEffect(() => {
+    const fetchWards = async () => {
+      try {
+        const res = await getWards();
+        if (res.data?.wards) {
+          const mappedWards = res.data.wards.map((w: any) => ({
+            name: w.name,
+            color: ["#00d4ff", "#00ff41", "#8800ff", "#ff00ff", "#ffaa00", "#00ffff"][Math.floor(Math.random() * 6)],
+            status: Math.random() > 0.4 ? "normal" : (Math.random() > 0.5 ? "warning" : "critical"),
+            count: Math.floor(Math.random() * 5),
+          }));
+          setWards(mappedWards);
+        }
+      } catch (error) {
+        console.error("Failed to fetch wards:", error);
+      }
+    };
+
+    fetchWards();
   }, []);
 
   return (
@@ -377,7 +424,7 @@ export default function HomePage() {
             transform: loaded ? "none" : "translateY(30px)",
             transition: "all 0.8s ease 0.2s",
           }}>
-            <WardMiniMap />
+            <WardMiniMap wards={wards} />
             <AlertFeed />
           </div>
         </div>
