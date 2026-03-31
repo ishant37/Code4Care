@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getWards, connectWebSocket } from "../services/api";
+import { getWards } from "../services/api";
 
 const DEFAULT_WARDS = [
   { name: "ICU Ward", color: "#00d4ff", status: "critical", count: 5 },
@@ -10,7 +10,7 @@ const DEFAULT_WARDS = [
   { name: "Ambulatory", color: "#00ffff", status: "normal", count: 1 },
 ];
 
-const STATUS_COLOR = {
+const STATUS_COLOR: Record<string, string> = {
   critical: "#ff0040",
   warning: "#ffaa00",
   normal: "#00ff41",
