@@ -37,6 +37,14 @@ WARDS = [
 # Frontend URL
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
+# Twilio Configuration (SMS Notifications)
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")
+
+# Doctor Contact Numbers
+DOCTOR_PHONE_NUMBERS = os.getenv("DOCTOR_PHONE_NUMBERS", "").split(",") if os.getenv("DOCTOR_PHONE_NUMBERS") else []
+
 print(f"""
 ╔══════════════════════════════════════════════════════════════╗
 ║  Hospital Infection Surveillance System (HISS)              ║

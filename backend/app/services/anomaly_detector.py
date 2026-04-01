@@ -1,9 +1,15 @@
 import numpy as np
 import pandas as pd
+import os
 from typing import List, Dict, Tuple
 from datetime import datetime, timedelta
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
+from twilio.rest import Client
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from app.models.schemas import LabTestResult, InfectionLog, AnomalyDetectionResult
 from app.services.data_generator import WARD_INFO, RISK_FACTORS
@@ -116,11 +122,15 @@ class AnomalyDetector:
         wards: List[Dict],
         lab_tests: List[LabTestResult],
         infection_logs: List[InfectionLog],
+        phone_numbers: List[str] = None,
     ) -> List[AnomalyDetectionResult]:
         """
         Detect anomalies across all wards.
         Returns: List of AnomalyDetectionResult for each ward
         """
+        if phone_numbers is None:
+            phone_numbers = []
+        
         results = []
 
         # Extract features for all wards
@@ -148,7 +158,10 @@ class AnomalyDetector:
                 risk_factors = ward_feature_map[ward_id]["risk_factors"]
 
                 anomaly_score = self._calculate_anomaly_score_heuristic(features)
-                status = self._classify_status(anomaly_score, len(risk_factors))
+                status = self._classify_status(
+                    anomaly_score, len(risk_factors),
+                    ward.get("name", "Unknown"), phone_numbers
+                )
 
                 results.append(
                     AnomalyDetectionResult(
@@ -189,7 +202,10 @@ class AnomalyDetector:
                 heuristic_score = self._calculate_anomaly_score_heuristic(features)
                 anomaly_score = (anomaly_score + heuristic_score) / 2
 
-            status = self._classify_status(anomaly_score, len(risk_factors))
+            status = self._classify_status(
+                anomaly_score, len(risk_factors),
+                ward.get("name", "Unknown"), phone_numbers
+            )
 
             results.append(
                 AnomalyDetectionResult(
@@ -230,15 +246,86 @@ class AnomalyDetector:
         # Normalize to 0-1
         return min(score / 100, 1.0)
 
+    def send_incident_alert(
+        self, ward_name: str, priority: str, anomaly_score: float, phone_numbers: List[str]
+    ) -> bool:
+        """
+        Send incident alert via SMS to multiple phone numbers using Twilio.
+        
+        Args:
+            ward_name: Name of the ward
+            priority: Priority level (critical/warning)
+            anomaly_score: Anomaly score (0-1)
+            phone_numbers: List of phone numbers to alert (e.g., doctors)
+        
+        Returns:
+            True if alerts sent successfully, False otherwise
+        """
+        try:
+            account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+            auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+            client = Client(account_sid, auth_token)
+            
+            score_percentage = int(anomaly_score * 100)
+            alert_message = f"⚠️ HISS {priority.upper()} ALERT\nWard: {ward_name}\nRisk Score: {score_percentage}%\nPriority: {priority}\nPlease check the dashboard immediately."
+            
+            # Send SMS to all 3 phone numbers
+            for phone_number in phone_numbers:
+                try:
+                    message = client.messages.create(
+                        body=alert_message,
+                        from_='+1234567890',  # Your Twilio Number
+                        to=phone_number
+                    )
+                    print(f"Alert sent to {phone_number}: {message.sid}")
+                except Exception as e:
+                    print(f"Failed to send alert to {phone_number}: {str(e)}")
+            
+            return True
+        except Exception as e:
+            print(f"Error sending incident alerts: {str(e)}")
+            return False
+
     def _classify_status(
-        self, anomaly_score: float, risk_factor_count: int
+        self, anomaly_score: float, risk_factor_count: int,
+        ward_name: str = "Unknown", phone_numbers: List[str] = None
     ) -> str:
         """
         Classify anomaly status based on score and risk factors.
+        Sends alerts for critical wards.
         """
+        if phone_numbers is None:
+            phone_numbers = ['+916367690519','+916376870280']
+        
         if anomaly_score >= 0.6 or risk_factor_count >= 4:
+            # Send critical alert to all numbers
+            if phone_numbers:
+                self.send_incident_alert(ward_name, "critical", anomaly_score, phone_numbers)
             return "critical"
         elif anomaly_score >= 0.35 or risk_factor_count >= 2:
+            # Send warning alert to all numbers
+            if phone_numbers:
+                self.send_incident_alert(ward_name, "warning", anomaly_score, phone_numbers)
             return "warning"
         else:
             return "normal"
+
+
+# Example Usage:
+# ============
+# To use the anomaly detector with SMS alerts to 3 doctors:
+#
+# detector = AnomalyDetector()
+# three_doctor_numbers = ['+919999999999', '+919999999998', '+919999999997']  # 3 phone numbers
+# 
+# results = detector.detect_anomalies(
+#     wards=wards_list,
+#     lab_tests=lab_tests_list,
+#     infection_logs=infection_logs_list,
+#     phone_numbers=three_doctor_numbers  # Pass the 3 numbers here
+# )
+#
+# When an anomaly is detected (acute status):
+# - Critical alert (score >= 0.6): Sends SMS to all 3 numbers
+# - Warning alert (score >= 0.35): Sends SMS to all 3 numbers
+# - Normal: No alerts sent

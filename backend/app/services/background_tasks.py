@@ -6,11 +6,13 @@ from app.models.schemas import WebSocketMessage, HospitalStats
 from app.services.data_generator import generate_mock_clinical_data, calculate_hospital_stats
 from app.services.anomaly_detector import AnomalyDetector
 from app.services.connection_manager import ConnectionManager
+from app.services.notification_service import notification_service
 from app.config import (
     WARDS,
     DATA_GENERATION_INTERVAL,
     ANOMALY_CHECK_INTERVAL,
     ANOMALY_CONTAMINATION,
+    DOCTOR_PHONE_NUMBERS,
 )
 
 # Global state
@@ -120,6 +122,23 @@ async def simulate_anomaly_detection():
                             },
                         )
                         await manager.broadcast(alert_message)
+
+                        # Send SMS alerts to doctors
+                        if DOCTOR_PHONE_NUMBERS and len(DOCTOR_PHONE_NUMBERS) > 0:
+                            for phone_number in DOCTOR_PHONE_NUMBERS:
+                                try:
+                                    if phone_number.strip():  # Only send if phone number is not empty
+                                        notification_service.send_sms_alert(
+                                            to_number=phone_number.strip(),
+                                            ward_name=result.ward_name,
+                                            score=result.anomaly_score,
+                                            severity=result.status
+                                        )
+                                        print(f"📱 SMS alert sent to {phone_number} for {result.ward_name}")
+                                except Exception as e:
+                                    print(f"❌ Failed to send SMS to {phone_number}: {e}")
+                        else:
+                            print("⚠️ No doctor phone numbers configured for SMS alerts")
                 else:
                     # Clear alert if status returns to normal
                     alert_key = f"{result.ward_id}_warning"
