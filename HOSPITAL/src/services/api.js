@@ -15,6 +15,34 @@ export const getWards = () => API.get("/api/wards");
 // Get initial clinical data
 export const getInitialData = () => API.get("/api/initial-data");
 
+// ==================== FHIR & EHR Integration ====================
+// Authenticate with Hospital EHR
+export const authenticateEHR = () => API.get("/api/ehr/authenticate");
+
+// Sync Patient Data from EHR
+export const syncEHRData = (wardId = null) => {
+  const params = wardId ? { ward_id: wardId } : {};
+  return API.get("/api/ehr/sync", { params });
+};
+
+// Get Lab Results in FHIR Format
+export const getLabObservationsFHIR = (wardId = null) => {
+  const params = wardId ? { ward_id: wardId } : {};
+  return API.get("/api/fhir/lab-observations", { params });
+};
+
+// Get Infection Logs in FHIR Format
+export const getInfectionConditionsFHIR = (wardId = null) => {
+  const params = wardId ? { ward_id: wardId } : {};
+  return API.get("/api/fhir/infection-conditions", { params });
+};
+
+// Complete EHR Sync with FHIR Transformation
+export const syncAndTransformFHIR = (wardId = null) => {
+  const params = wardId ? { ward_id: wardId } : {};
+  return API.post("/api/ehr/sync-and-transform", {}, { params });
+};
+
 // WebSocket connection for real-time updates
 export const connectWebSocket = (onMessage, onError) => {
   const ws = new WebSocket(`ws://localhost:8000/ws`);

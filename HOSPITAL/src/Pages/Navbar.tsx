@@ -112,6 +112,14 @@ const NAV_SECTIONS: NavSection[] = [
         badge: "NEW",
         badgeColor: "#00ff41",
       },
+      {
+        label: "EHR Sync",
+        path: "/ehr-sync",
+        icon: Icon.Lab,
+        color: "#ff6b9d",
+        badge: "FHIR",
+        badgeColor: "#ff6b9d",
+      },
     ],
   },
   {

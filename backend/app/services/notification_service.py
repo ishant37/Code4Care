@@ -7,11 +7,28 @@ logger = logging.getLogger(__name__)
 
 class NotificationService:
     def __init__(self):
-        self.client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        # Check if credentials are valid (not dummy/test values)
+        if TWILIO_ACCOUNT_SID and TWILIO_ACCOUNT_SID.startswith("AC"):
+            try:
+                self.client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+                self.enabled = True
+            except Exception as e:
+                logger.warning(f"⚠️ Twilio initialization failed: {e}. SMS alerts disabled.")
+                self.enabled = False
+                self.client = None
+        else:
+            logger.info("⚠️ Twilio credentials not configured. Using test mode.")
+            self.enabled = False
+            self.client = None
+        
         self.from_number = TWILIO_PHONE_NUMBER
 
     def send_sms_alert(self, to_number: str, ward_name: str, score: float, severity: str):
         """Sends a standard SMS alert to a doctor's phone."""
+        if not self.enabled:
+            logger.info(f"SMS (test mode): Alert to {to_number} - {ward_name} ({severity})")
+            return "test_mode"
+        
         try:
             message_body = (
                 f"🚨 HISS ALERT: {severity.upper()}\n"
@@ -33,6 +50,10 @@ class NotificationService:
 
     def send_whatsapp_alert(self, to_number: str, ward_name: str, score: float):
         """Sends a WhatsApp alert (Hackathon Favorite)."""
+        if not self.enabled:
+            logger.info(f"WhatsApp (test mode): Alert to {to_number} - {ward_name}")
+            return "test_mode"
+        
         try:
             # Twilio WhatsApp numbers usually look like 'whatsapp:+14155238886'
             message = self.client.messages.create(
