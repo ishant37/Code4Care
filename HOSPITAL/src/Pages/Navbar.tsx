@@ -145,8 +145,12 @@ export default function SideNavbar() {
             background: "rgba(66,165,245,0.2)",
             border: "1px solid rgba(66,165,245,0.4)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 17,
-          }}>🏥</div>
+            color: "#42A5F5",
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
           {!collapsed && (
             <div>
               <div style={{ fontSize: 14, fontWeight: 800, color: COLORS.textPrimary, letterSpacing: -0.3, whiteSpace: "nowrap" }}>
@@ -180,7 +184,17 @@ export default function SideNavbar() {
       {/* Role badge */}
       {!collapsed && user && (
         <div style={{ margin: "10px 12px 0", padding: "8px 12px", borderRadius: 8, background: `${roleColor}18`, border: `1px solid ${roleColor}33`, display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13 }}>{user.role === "doctor" ? "🩺" : "🏥"}</span>
+          <div style={{ color: roleColor, display: "flex", alignItems: "center" }}>
+            {user.role === "doctor" ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              </svg>
+            )}
+          </div>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: roleColor }}>{roleLabel}</div>
             <div style={{ fontSize: 9, color: COLORS.textMuted, marginTop: 1 }}>

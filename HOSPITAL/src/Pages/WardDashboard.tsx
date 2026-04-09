@@ -32,6 +32,8 @@ const STAT_COLORS = {
   purple:   "#6A1B9A",
 };
 
+const DOCTOR_PHONE = "+91 6367690519";
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [viewMode, setViewMode]         = useState<ViewMode>("3d-map");
@@ -88,12 +90,11 @@ const Dashboard: React.FC = () => {
 
   const critCount = liveAlerts.filter(a => a.anomalyScore >= 0.7).length;
   const warnCount = liveAlerts.filter(a => a.anomalyScore >= 0.4 && a.anomalyScore < 0.7).length;
-
   const isDoctor = user?.role === "doctor";
 
-  const TABS: { mode: ViewMode; label: string; emoji: string; badge?: number }[] = [
-    { mode: "3d-map", label: "3D Hospital Map", emoji: "🏥", badge: critCount > 0 ? critCount : undefined },
-    { mode: "alerts", label: "Alert Dashboard", emoji: "🚨", badge: liveAlerts.length },
+  const TABS: { mode: ViewMode; label: string; badge?: number }[] = [
+    { mode: "3d-map", label: "3D Hospital Map",     badge: critCount > 0 ? critCount : undefined },
+    { mode: "alerts", label: "Alert Dashboard",     badge: liveAlerts.length },
   ];
 
   return (
@@ -102,9 +103,41 @@ const Dashboard: React.FC = () => {
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
+        {/* CRITICAL BANNER */}
+        {critCount > 0 && (
+          <div style={{
+            background: "#C62828", color: "#FFFFFF",
+            padding: "8px 24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexShrink: 0, zIndex: 30,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FFCDD2", animation: "pulse-dot 1s infinite" }} />
+              <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.3 }}>
+                {critCount} CRITICAL ALERT{critCount > 1 ? "S" : ""} ACTIVE — Immediate medical attention required
+              </span>
+            </div>
+            <a
+              href={`tel:${DOCTOR_PHONE}`}
+              style={{
+                display: "flex", alignItems: "center", gap: 7,
+                background: "rgba(255,255,255,0.18)", color: "#FFFFFF",
+                border: "1px solid rgba(255,255,255,0.4)",
+                borderRadius: 7, padding: "5px 14px",
+                textDecoration: "none", fontSize: 12, fontWeight: 800, letterSpacing: 0.2,
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 .18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+              Call Doctor — {DOCTOR_PHONE}
+            </a>
+          </div>
+        )}
+
         {/* HEADER */}
         <header style={{
-          height: 60, padding: "0 24px", flexShrink: 0,
+          height: 56, padding: "0 24px", flexShrink: 0,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           borderBottom: "1px solid #E0E0E0",
           background: "#FFFFFF",
@@ -115,35 +148,22 @@ const Dashboard: React.FC = () => {
             <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2332" }}>HISS</span>
             <span style={{ color: "#CFD8DC", fontSize: 14 }}>›</span>
             <span style={{ fontSize: 13, color: "#607D8B" }}>Command Center</span>
-            {isDoctor && (
-              <>
-                <span style={{ color: "#CFD8DC", fontSize: 14 }}>›</span>
-                <span style={{
-                  fontSize: 11, color: "#1565C0", fontWeight: 600,
-                  background: "#E3F2FD", padding: "2px 8px", borderRadius: 4,
-                }}>
-                  🩺 Doctor View
-                </span>
-              </>
-            )}
-            {!isDoctor && (
-              <>
-                <span style={{ color: "#CFD8DC", fontSize: 14 }}>›</span>
-                <span style={{
-                  fontSize: 11, color: "#00695C", fontWeight: 600,
-                  background: "#E0F2F1", padding: "2px 8px", borderRadius: 4,
-                }}>
-                  🏥 Ward Manager View
-                </span>
-              </>
-            )}
+            <span style={{ color: "#CFD8DC", fontSize: 14 }}>›</span>
+            <span style={{
+              fontSize: 11, fontWeight: 600,
+              color: isDoctor ? "#1565C0" : "#00695C",
+              background: isDoctor ? "#E3F2FD" : "#E0F2F1",
+              padding: "2px 8px", borderRadius: 4,
+            }}>
+              {isDoctor ? "Doctor View" : "Ward Manager View"}
+            </span>
           </div>
 
           {/* CENTER TABS */}
-          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, background: "#F5F5F5", border: "1px solid #E0E0E0", borderRadius: 10, padding: 4 }}>
+          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, background: "#F5F5F5", border: "1px solid #E0E0E0", borderRadius: 10, padding: 4 }}>
             {TABS.map(tab => (
               <button key={tab.mode} onClick={() => setViewMode(tab.mode)} style={{
-                padding: "8px 20px", fontSize: 13, fontWeight: 600,
+                padding: "7px 20px", fontSize: 12, fontWeight: 600,
                 cursor: "pointer", border: "none", borderRadius: 7,
                 background: viewMode === tab.mode ? "#FFFFFF" : "transparent",
                 color: viewMode === tab.mode ? "#1565C0" : "#90A4AE",
@@ -151,7 +171,6 @@ const Dashboard: React.FC = () => {
                 transition: "all 0.2s", display: "flex", alignItems: "center", gap: 7,
                 fontFamily: "inherit",
               }}>
-                <span>{tab.emoji}</span>
                 {tab.label}
                 {tab.badge !== undefined && tab.badge > 0 && (
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#FFFFFF", background: "#C62828", borderRadius: 10, padding: "1px 6px", minWidth: 18, textAlign: "center" }}>{tab.badge}</span>
@@ -161,15 +180,9 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* RIGHT */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            {critCount > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#FFEBEE", border: "1px solid #EF9A9A", borderRadius: 8, padding: "4px 12px" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#C62828", display: "inline-block", animation: "pulse-dot 1s infinite" }} />
-                <span style={{ fontSize: 12, color: "#C62828", fontWeight: 700 }}>{critCount} Critical</span>
-              </div>
-            )}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: wsConnected ? "#4CAF50" : "#EF5350", display: "inline-block", animation: "pulse-dot 2s infinite" }} />
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: wsConnected ? "#4CAF50" : "#EF5350", display: "inline-block" }} />
               <span style={{ fontSize: 12, color: wsConnected ? "#2E7D32" : "#C62828", fontWeight: 600 }}>
                 {wsConnected ? "Live" : "Offline"}
               </span>
@@ -193,23 +206,23 @@ const Dashboard: React.FC = () => {
           overflowX: "auto",
         }}>
           {[
-            { label: "Total Wards", value: wards.length,                         color: STAT_COLORS.blue,     icon: "🏥" },
-            { label: "Critical",    value: critCount,                             color: STAT_COLORS.critical, icon: "🔴" },
-            { label: "Warning",     value: warnCount,                             color: STAT_COLORS.warning,  icon: "🟡" },
-            { label: "Normal",      value: wards.length - liveAlerts.length,      color: STAT_COLORS.normal,   icon: "🟢" },
+            { label: "Total Wards", value: wards.length,                         color: STAT_COLORS.blue,     dot: "#1565C0" },
+            { label: "Critical",    value: critCount,                             color: STAT_COLORS.critical, dot: "#C62828" },
+            { label: "Warning",     value: warnCount,                             color: STAT_COLORS.warning,  dot: "#E65100" },
+            { label: "Normal",      value: wards.length - liveAlerts.length,      color: STAT_COLORS.normal,   dot: "#2E7D32" },
             ...(isDoctor ? [
-              { label: "AI Engine",   value: "Active",                            color: STAT_COLORS.purple,   icon: "🤖" },
-              { label: "Algorithm",   value: "Iso·Forest",                        color: STAT_COLORS.blue,     icon: "🔬" },
-              { label: "Cycle",       value: "30s",                               color: STAT_COLORS.normal,   icon: "⏱️" },
+              { label: "AI Engine",   value: "Active",        color: STAT_COLORS.purple, dot: "#6A1B9A" },
+              { label: "Algorithm",   value: "Iso·Forest",    color: STAT_COLORS.blue,   dot: "#1565C0" },
+              { label: "Cycle",       value: "30s",           color: STAT_COLORS.normal,  dot: "#2E7D32" },
             ] : [
-              { label: "My Wards",    value: 3,                                   color: STAT_COLORS.blue,     icon: "🏥" },
-              { label: "Tasks Today", value: 7,                                   color: STAT_COLORS.normal,   icon: "✅" },
+              { label: "My Wards",    value: 3,               color: STAT_COLORS.blue,   dot: "#1565C0" },
+              { label: "Tasks Today", value: 7,               color: STAT_COLORS.normal,  dot: "#2E7D32" },
             ]),
           ].map((s, i) => (
             <React.Fragment key={s.label}>
               {i > 0 && <div style={{ width: 1, height: 36, background: "#ECEFF1", flexShrink: 0 }} />}
               <div style={{ padding: "8px 18px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                <span style={{ fontSize: 16 }}>{s.icon}</span>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.dot, flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 10, color: "#90A4AE", fontWeight: 600, letterSpacing: 0.5, marginBottom: 1 }}>{s.label.toUpperCase()}</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
@@ -224,7 +237,6 @@ const Dashboard: React.FC = () => {
           <AnimatePresence mode="wait">
             {viewMode === "3d-map" ? (
               <motion.div key="3d" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ width: "100%", height: "100%", position: "relative" }}>
-                {/* Selected ward info */}
                 <div style={{
                   position: "absolute", top: 16, right: 16, zIndex: 10,
                   background: "#FFFFFF", border: "1px solid #E0E0E0",
@@ -238,6 +250,23 @@ const Dashboard: React.FC = () => {
                       {(selectedWard.anomalyScore * 100).toFixed(0)}%
                     </span>
                   </div>
+                  {selectedWard.anomalyScore >= 0.7 && (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #FFCDD2" }}>
+                      <a
+                        href={`tel:${DOCTOR_PHONE}`}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 5,
+                          color: "#C62828", textDecoration: "none",
+                          fontSize: 11, fontWeight: 700,
+                        }}
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 .18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+                        </svg>
+                        {DOCTOR_PHONE}
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{
@@ -246,7 +275,7 @@ const Dashboard: React.FC = () => {
                   borderRadius: 8, padding: "6px 14px", fontSize: 11, color: "#90A4AE",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                 }}>
-                  🖱 Drag · Scroll · Click ward
+                  Drag · Scroll · Click ward to select
                 </div>
 
                 <HospitalMap selectedWard={selectedWard} alerts={liveAlerts} onWardClick={handleWardClick} wards={wards} />

@@ -4,12 +4,12 @@ import { useAuth } from "../context/AuthContext";
 import { getWards } from "../services/api";
 
 const DEFAULT_WARDS = [
-  { name: "ICU Ward", status: "critical", count: 3 },
-  { name: "General Ward", status: "normal", count: 0 },
-  { name: "Surgery OT", status: "warning", count: 1 },
-  { name: "Pediatrics", status: "normal", count: 0 },
-  { name: "Emergency", status: "warning", count: 2 },
-  { name: "Oncology", status: "normal", count: 0 },
+  { name: "ICU Ward",    status: "critical", count: 3 },
+  { name: "General Ward", status: "normal",  count: 0 },
+  { name: "Surgery OT",  status: "warning",  count: 1 },
+  { name: "Pediatrics",  status: "normal",   count: 0 },
+  { name: "Emergency",   status: "warning",  count: 2 },
+  { name: "Oncology",    status: "normal",   count: 0 },
 ];
 
 const STATUS = {
@@ -19,12 +19,66 @@ const STATUS = {
 };
 
 const FEATURES = [
-  { emoji: "🔬", title: "AI Anomaly Detection", desc: "Isolation Forest algorithm analyses 8 clinical features per ward to surface outbreak patterns in real time.", color: "#1565C0" },
-  { emoji: "📡", title: "Live WebSocket Feed", desc: "Sub-second alert broadcasting streams patient records, lab results, and ward status to every connected client.", color: "#00695C" },
-  { emoji: "🏥", title: "3D Digital Twin", desc: "Interactive three-dimensional hospital map with floor-by-floor view and real-time ward status overlays.", color: "#6A1B9A" },
-  { emoji: "⚕️", title: "HAI Risk Scoring", desc: "Multi-factor scoring across positivity rates, antibiotic resistance, organism clustering, and infection onset.", color: "#AD1457" },
-  { emoji: "🧫", title: "Outbreak Detection", desc: "Automatically flags when the same organism appears in 30%+ of tests — before it becomes a ward-wide crisis.", color: "#00838F" },
-  { emoji: "📋", title: "Role-Based Access", desc: "Doctors and Ward Managers see tailored views with appropriate data and actions for their responsibilities.", color: "#4527A0" },
+  {
+    title: "AI Anomaly Detection",
+    desc: "Isolation Forest algorithm analyses 8 clinical features per ward to surface outbreak patterns in real time.",
+    color: "#1565C0",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    ),
+  },
+  {
+    title: "Live WebSocket Feed",
+    desc: "Sub-second alert broadcasting streams patient records, lab results, and ward status to every connected client.",
+    color: "#00695C",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
+      </svg>
+    ),
+  },
+  {
+    title: "3D Digital Twin",
+    desc: "Interactive three-dimensional hospital map with floor-by-floor view and real-time ward status overlays.",
+    color: "#6A1B9A",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    ),
+  },
+  {
+    title: "HAI Risk Scoring",
+    desc: "Multi-factor scoring across positivity rates, antibiotic resistance, organism clustering, and infection onset.",
+    color: "#AD1457",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    ),
+  },
+  {
+    title: "Outbreak Detection",
+    desc: "Automatically flags when the same organism appears in 30%+ of tests — before it becomes a ward-wide crisis.",
+    color: "#00838F",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    ),
+  },
+  {
+    title: "Role-Based Access",
+    desc: "Doctors and Ward Managers see tailored views with appropriate data and actions for their responsibilities.",
+    color: "#4527A0",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+    ),
+  },
 ];
 
 export default function HomePage() {
@@ -64,8 +118,11 @@ export default function HomePage() {
             width: 40, height: 40, borderRadius: 10,
             background: "linear-gradient(135deg, #1565C0, #0277BD)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, color: "#fff",
-          }}>🏥</div>
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#1A2332", letterSpacing: -0.3 }}>HISS</div>
             <div style={{ fontSize: 10, color: "#90A4AE", letterSpacing: 0.5 }}>Hospital Infection Surveillance</div>
@@ -127,7 +184,6 @@ export default function HomePage() {
           transform: mounted ? "none" : "translateY(24px)",
           transition: "opacity 0.7s ease, transform 0.7s ease",
         }}>
-          {/* LEFT */}
           <div>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 8,
@@ -160,7 +216,7 @@ export default function HomePage() {
                   boxShadow: "0 4px 16px rgba(21,101,192,0.35)",
                 }}
               >
-                🏥 {user ? "Open Dashboard" : "Get Started"}
+                {user ? "Open Dashboard" : "Get Started"} →
               </button>
               <a href="#features" style={{
                 padding: "14px 24px", border: "1.5px solid #CFD8DC",
@@ -175,8 +231,8 @@ export default function HomePage() {
             <div style={{ display: "flex", gap: 32 }}>
               {[
                 { val: "6+", label: "Wards Monitored", color: "#1565C0" },
-                { val: "8", label: "AI Features / Ward", color: "#6A1B9A" },
-                { val: "30s", label: "Detection Cycle", color: "#2E7D32" },
+                { val: "8",  label: "AI Features / Ward", color: "#6A1B9A" },
+                { val: "30s",label: "Detection Cycle",  color: "#2E7D32" },
               ].map(m => (
                 <div key={m.label}>
                   <div style={{ fontSize: 28, fontWeight: 800, color: m.color, lineHeight: 1 }}>{m.val}</div>
@@ -188,11 +244,8 @@ export default function HomePage() {
 
           {/* RIGHT — Live Ward Status Card */}
           <div style={{
-            background: "#FFFFFF",
-            borderRadius: 20,
-            padding: 28,
-            boxShadow: "0 8px 40px rgba(0,0,0,0.10)",
-            border: "1px solid #E0E0E0",
+            background: "#FFFFFF", borderRadius: 20, padding: 28,
+            boxShadow: "0 8px 40px rgba(0,0,0,0.10)", border: "1px solid #E0E0E0",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div>
@@ -211,7 +264,7 @@ export default function HomePage() {
                 return (
                   <div key={i} style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "12px 16px", borderRadius: 10,
+                    padding: "11px 16px", borderRadius: 10,
                     background: s.bg, border: `1px solid ${s.color}22`,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -239,8 +292,8 @@ export default function HomePage() {
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #ECEFF1", display: "flex", justifyContent: "space-between" }}>
               {[
                 { label: "Critical", val: wards.filter(w => w.status === "critical").length, color: "#C62828" },
-                { label: "Warning", val: wards.filter(w => w.status === "warning").length, color: "#E65100" },
-                { label: "Normal", val: wards.filter(w => w.status === "normal").length, color: "#2E7D32" },
+                { label: "Warning",  val: wards.filter(w => w.status === "warning").length,  color: "#E65100" },
+                { label: "Normal",   val: wards.filter(w => w.status === "normal").length,   color: "#2E7D32" },
               ].map(s => (
                 <div key={s.label} style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.val}</div>
@@ -265,7 +318,7 @@ export default function HomePage() {
             </p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
-            {FEATURES.map((f, i) => (
+            {FEATURES.map(f => (
               <div key={f.title} style={{
                 background: "#F8FAFC", borderRadius: 14,
                 border: "1px solid #ECEFF1", padding: 28,
@@ -273,7 +326,7 @@ export default function HomePage() {
               }}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = `0 12px 32px rgba(0,0,0,0.1)`;
+                  e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.1)";
                   e.currentTarget.style.borderColor = f.color + "44";
                 }}
                 onMouseLeave={e => {
@@ -286,8 +339,10 @@ export default function HomePage() {
                   width: 48, height: 48, borderRadius: 12,
                   background: f.color + "14", display: "flex",
                   alignItems: "center", justifyContent: "center",
-                  fontSize: 22, marginBottom: 16,
-                }}>{f.emoji}</div>
+                  color: f.color, marginBottom: 16,
+                }}>
+                  {f.icon}
+                </div>
                 <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 8px", color: "#1A2332" }}>{f.title}</h3>
                 <p style={{ fontSize: 13, color: "#607D8B", lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
               </div>
@@ -307,10 +362,30 @@ export default function HomePage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
             {[
-              { step: "01", title: "Data Ingestion", desc: "Lab results, blood cultures, and infection logs stream in continuously in real time.", color: "#1565C0", icon: "🧪" },
-              { step: "02", title: "Feature Extraction", desc: "8 clinical features extracted per ward — positivity rates, antibiotic resistance, severity scores.", color: "#6A1B9A", icon: "📊" },
-              { step: "03", title: "AI Detection", desc: "Isolation Forest identifies multivariate outliers. Combined with heuristic scoring for robustness.", color: "#00695C", icon: "🤖" },
-              { step: "04", title: "Alert Broadcast", desc: "Critical alerts fire instantly over WebSocket to every connected dashboard — real-time push.", color: "#C62828", icon: "🚨" },
+              {
+                step: "01", title: "Data Ingestion",
+                desc: "Lab results, blood cultures, and infection logs stream in continuously in real time.",
+                color: "#1565C0",
+                icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+              },
+              {
+                step: "02", title: "Feature Extraction",
+                desc: "8 clinical features extracted per ward — positivity rates, antibiotic resistance, severity scores.",
+                color: "#6A1B9A",
+                icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+              },
+              {
+                step: "03", title: "AI Detection",
+                desc: "Isolation Forest identifies multivariate outliers. Combined with heuristic scoring for robustness.",
+                color: "#00695C",
+                icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+              },
+              {
+                step: "04", title: "Alert Broadcast",
+                desc: "Critical alerts fire instantly over WebSocket to every connected dashboard — real-time push.",
+                color: "#C62828",
+                icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+              },
             ].map(s => (
               <div key={s.step} style={{
                 background: "#FFFFFF", borderRadius: 14, padding: 24,
@@ -320,7 +395,7 @@ export default function HomePage() {
                 <div style={{ fontSize: 11, color: s.color, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>
                   STEP {s.step}
                 </div>
-                <div style={{ fontSize: 28, marginBottom: 12 }}>{s.icon}</div>
+                <div style={{ color: s.color, marginBottom: 12 }}>{s.icon}</div>
                 <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 8px", color: "#1A2332" }}>{s.title}</h3>
                 <p style={{ fontSize: 12, color: "#607D8B", lineHeight: 1.65, margin: 0 }}>{s.desc}</p>
               </div>
@@ -335,7 +410,7 @@ export default function HomePage() {
           <h2 style={{ fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800, margin: "0 0 16px", letterSpacing: -0.5 }}>
             Ready to Protect Your Patients?
           </h2>
-          <p style={{ fontSize: 16, opacity: 0.8, margin: "0 0 36px", lineHeight: 1.6 }}>
+          <p style={{ fontSize: 16, opacity: 0.85, margin: "0 0 36px", lineHeight: 1.6 }}>
             Sign in with your hospital credentials to access the infection surveillance dashboard.
           </p>
           <button
@@ -361,6 +436,7 @@ export default function HomePage() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
       `}</style>
     </div>
   );
