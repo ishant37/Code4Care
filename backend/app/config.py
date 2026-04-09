@@ -8,7 +8,7 @@ API_TITLE = "Hospital Infection Surveillance System"
 API_VERSION = "1.0.0"
 
 # Server Configuration
-HOST = os.getenv("HOST", "0.0.0.0")
+HOST = os.getenv("HOST", "localhost")
 PORT = int(os.getenv("PORT", 8000))
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 

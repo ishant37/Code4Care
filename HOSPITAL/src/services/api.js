@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "";
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -45,7 +45,8 @@ export const syncAndTransformFHIR = (wardId = null) => {
 
 // WebSocket connection for real-time updates
 export const connectWebSocket = (onMessage, onError) => {
-  const ws = new WebSocket(`ws://localhost:8000/ws`);
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
   
   ws.onopen = () => {
     console.log("✅ WebSocket Connected");
