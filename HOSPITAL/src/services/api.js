@@ -1,75 +1,37 @@
 import axios from "axios";
 
-const API_BASE_URL = "";
+const API = axios.create({ baseURL: "" });
 
-const API = axios.create({
-  baseURL: API_BASE_URL,
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("hiss_token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 
-// Health Check
+export const loginUser = (username, password) =>
+  API.post("/api/auth/login", { username, password });
+
+export const getMe = () => API.get("/api/auth/me");
+
 export const healthCheck = () => API.get("/health");
 
-// Get all wards configuration
 export const getWards = () => API.get("/api/wards");
 
-// Get initial clinical data
 export const getInitialData = () => API.get("/api/initial-data");
 
-// ==================== FHIR & EHR Integration ====================
-// Authenticate with Hospital EHR
-export const authenticateEHR = () => API.get("/api/ehr/authenticate");
+export const getWardStats = () => API.get("/api/ward-stats");
 
-// Sync Patient Data from EHR
-export const syncEHRData = (wardId = null) => {
-  const params = wardId ? { ward_id: wardId } : {};
-  return API.get("/api/ehr/sync", { params });
-};
-
-// Get Lab Results in FHIR Format
-export const getLabObservationsFHIR = (wardId = null) => {
-  const params = wardId ? { ward_id: wardId } : {};
-  return API.get("/api/fhir/lab-observations", { params });
-};
-
-// Get Infection Logs in FHIR Format
-export const getInfectionConditionsFHIR = (wardId = null) => {
-  const params = wardId ? { ward_id: wardId } : {};
-  return API.get("/api/fhir/infection-conditions", { params });
-};
-
-// Complete EHR Sync with FHIR Transformation
-export const syncAndTransformFHIR = (wardId = null) => {
-  const params = wardId ? { ward_id: wardId } : {};
-  return API.post("/api/ehr/sync-and-transform", {}, { params });
-};
-
-// WebSocket connection for real-time updates
 export const connectWebSocket = (onMessage, onError) => {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
-  
-  ws.onopen = () => {
-    console.log("✅ WebSocket Connected");
-  };
-  
+
+  ws.onopen = () => console.log("✅ WebSocket Connected");
   ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      onMessage(data);
-    } catch (err) {
-      console.error("WebSocket message parse error:", err);
-    }
+    try { onMessage(JSON.parse(event.data)); } catch (err) { console.error("WS parse error:", err); }
   };
-  
-  ws.onerror = (error) => {
-    console.error("WebSocket error:", error);
-    if (onError) onError(error);
-  };
-  
-  ws.onclose = () => {
-    console.log("WebSocket Disconnected");
-  };
-  
+  ws.onerror = (error) => { console.error("WebSocket error:", error); if (onError) onError(error); };
+  ws.onclose = () => console.log("WebSocket Disconnected");
+
   return ws;
 };
 
