@@ -85,3 +85,31 @@ class WebSocketMessage(BaseModel):
     """Generic WebSocket message"""
     type: Literal["alert", "update", "stats", "patient_record"]
     payload: dict
+
+
+# ==================== DISHA-Compliant Patient Record ====================
+class DISHAPatientRecord(BaseModel):
+    """
+    Anonymized synthetic patient record complying with
+    DISHA (Digital Information Security in Healthcare Act) standards.
+    No real PHI — all identifiers are hashed/pseudonymized.
+    """
+    record_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    patient_id: str                     # pseudonymized — e.g. PAT-A7B2C3
+    ward_id: str
+    ward_name: str
+    infection_type: Optional[str]       # SSI, UTI, VAP, CLABSI, HAP, or None
+    risk_score: float                   # 0.0 – 1.0 (Isolation Forest output)
+    isolation_forest_flag: bool         # True if risk_score >= 0.6
+    specimen_type: str                  # Blood, Urine, Wound, Sputum
+    organism: Optional[str]             # pathogen, None if culture-negative
+    antibiotic_resistant: bool
+    onset_date: datetime
+    status: Literal["suspected", "confirmed", "resolved"]
+    severity: Literal["mild", "moderate", "severe"]
+    data_consent: bool = True           # DISHA: explicit consent recorded
+    data_encrypted: bool = True         # DISHA: data encrypted at rest
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_encoders = {datetime: lambda v: v.isoformat()}

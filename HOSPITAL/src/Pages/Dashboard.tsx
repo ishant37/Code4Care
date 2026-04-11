@@ -1,15 +1,12 @@
 import React, { useRef, useState, useEffect, useMemo, Suspense } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   OrbitControls,
   Text,
   Html,
-  Environment,
-  MeshTransmissionMaterial,
-  Float,
   Sparkles,
 } from "@react-three/drei";
-import { EffectComposer, Bloom, ChromaticAberration } from "@react-three/postprocessing";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "framer-motion";
@@ -64,21 +61,11 @@ const WARD_CONFIG = [
   { id: "isolation",  name: "Isolation",      pos: [-8, 8, -4],  size: [5, 3.5, 5], color: "#ff0040", floor: 2, patients: 3,  infections: 3 },
 ];
 
-// Corrido/hallway pieces
-const CORRIDORS = [
-  { pos: [0, 0.05, 8.5],  size: [18, 0.1, 1] },
-  { pos: [0, 0.05, 0],    size: [18, 0.1, 1] },
-  { pos: [0, 0.05, -7],   size: [18, 0.1, 1] },
-  { pos: [-8.5, 0.05, 0], size: [1, 0.1, 18] },
-  { pos: [0, 0.05, 0],    size: [1, 0.1, 18] },
-  { pos: [7.5, 0.05, 0],  size: [1, 0.1, 18] },
-];
-
 // ─── Status helpers ───────────────────────────────────────────────────────────
 function statusColor(score: number) {
-  if (score >= 0.7) return "#ff0040";
-  if (score >= 0.4) return "#ffaa00";
-  return "#00ff41";
+  if (score >= 0.6) return "#C62828";  // clinical red — infected
+  if (score >= 0.35) return "#E65100"; // clinical orange — warning
+  return "#546E7A";                    // clinical grey — safe
 }
 
 // ─── Animated alert ring ──────────────────────────────────────────────────────
@@ -107,20 +94,25 @@ interface WardBlockProps {
   isSelected: boolean;
   isAlert: boolean;
   onClick: () => void;
+  infectionType?: string;
+  backendStatus?: "normal" | "warning" | "critical";
 }
 
-function WardBlock({ config, wardData, isSelected, isAlert, onClick }: WardBlockProps) {
+function WardBlock({ config, wardData, isSelected, isAlert, onClick, infectionType, backendStatus }: WardBlockProps) {
   const meshRef = useRef<THREE.Mesh>(null!);
   const [hovered, setHovered] = useState(false);
   const score = wardData?.anomalyScore ?? 0;
-  const sColor = statusColor(score);
-  const wallColor = isAlert ? "#1a0008" : isSelected ? "#001a2a" : "#050e18";
-  const emissiveColor = isAlert ? "#ff0040" : isSelected ? "#00d4ff" : config.color;
+  // Backend status overrides local score-based color when available
+  const effectiveScore = backendStatus === "critical" ? 0.8 : backendStatus === "warning" ? 0.45 : score;
+  const sColor = statusColor(effectiveScore);
+  const effectiveAlert = isAlert || backendStatus === "critical";
+  const wallColor = effectiveAlert ? "#1a0008" : isSelected ? "#001a2a" : "#050e18";
+  const emissiveColor = effectiveAlert ? "#C62828" : isSelected ? "#1565C0" : sColor;
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
     const t = clock.elapsedTime;
-    if (isAlert) {
+    if (effectiveAlert) {
       (meshRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity =
         0.3 + Math.sin(t * 4) * 0.2;
     } else if (isSelected) {
@@ -161,10 +153,10 @@ function WardBlock({ config, wardData, isSelected, isAlert, onClick }: WardBlock
       <mesh>
         <boxGeometry args={[w + 0.02, h + 0.02, d + 0.02]} />
         <meshBasicMaterial
-          color={isAlert ? "#ff0040" : isSelected ? "#00d4ff" : hovered ? config.color : "#1a3040"}
+          color={effectiveAlert ? "#C62828" : isSelected ? "#1565C0" : hovered ? sColor : "#1a3040"}
           wireframe
           transparent
-          opacity={isAlert || isSelected ? 0.6 : 0.2}
+          opacity={effectiveAlert || isSelected ? 0.6 : 0.2}
         />
       </mesh>
 
@@ -178,16 +170,16 @@ function WardBlock({ config, wardData, isSelected, isAlert, onClick }: WardBlock
       <mesh position={[0, h / 2 + 0.02, 0]}>
         <boxGeometry args={[w, 0.05, d]} />
         <meshBasicMaterial
-          color={isAlert ? "#ff0040" : config.color}
+          color={effectiveAlert ? "#C62828" : sColor}
           transparent
-          opacity={isAlert || isSelected ? 0.8 : 0.15}
+          opacity={effectiveAlert || isSelected ? 0.8 : 0.15}
         />
       </mesh>
 
       {/* Alert ring */}
-      {isAlert && (
+      {effectiveAlert && (
         <group position={[0, -h / 2, 0]}>
-          <AlertRing color="#ff0040" />
+          <AlertRing color="#C62828" />
         </group>
       )}
 
@@ -195,18 +187,16 @@ function WardBlock({ config, wardData, isSelected, isAlert, onClick }: WardBlock
       <Text
         position={[0, h / 2 + 0.4, 0]}
         fontSize={0.28}
-        color={isAlert ? "#ff6080" : isSelected ? "#00d4ff" : hovered ? "#e0eeff" : "#445566"}
+        color={effectiveAlert ? "#EF9A9A" : isSelected ? "#90CAF9" : hovered ? "#e0eeff" : "#445566"}
         anchorX="center"
         anchorY="middle"
-        // Uncomment the line below ONLY if you have this font in your public/fonts/ folder
-        // font="/fonts/JetBrainsMono-Bold.woff"
         maxWidth={w - 0.4}
       >
         {config.name}
       </Text>
 
-      {/* Score badge */}
-      {(isAlert || isSelected || hovered) && wardData && (
+      {/* Score / infection badge — shown on hover, select, or alert */}
+      {(effectiveAlert || isSelected || hovered) && wardData && (
         <Html
           position={[0, h / 2 + 0.9, 0]}
           center
@@ -215,7 +205,7 @@ function WardBlock({ config, wardData, isSelected, isAlert, onClick }: WardBlock
         >
           <div style={{
             background: "rgba(2,8,18,0.92)",
-            border: `1px solid ${sColor}55`,
+            border: `1px solid ${sColor}66`,
             borderRadius: 8,
             padding: "6px 10px",
             fontFamily: "monospace",
@@ -226,38 +216,22 @@ function WardBlock({ config, wardData, isSelected, isAlert, onClick }: WardBlock
             backdropFilter: "blur(4px)",
           }}>
             <div style={{ fontWeight: 800, letterSpacing: 1 }}>
-              {isAlert ? "⚠ " : ""}{config.name}
+              {effectiveAlert ? "[!] " : ""}{config.name}
             </div>
+            {infectionType && (
+              <div style={{ color: "#EF9A9A", marginTop: 2, fontWeight: 700 }}>
+                HAI: {infectionType}
+              </div>
+            )}
             <div style={{ color: "#667788", marginTop: 2 }}>
-              Score: <span style={{ color: sColor }}>{(score * 100).toFixed(0)}%</span>
-              &nbsp;·&nbsp;Pts: <span style={{ color: "#00d4ff" }}>{config.patients}</span>
+              Risk: <span style={{ color: sColor }}>{(effectiveScore * 100).toFixed(0)}%</span>
+              &nbsp;·&nbsp;Pts: <span style={{ color: "#90CAF9" }}>{config.patients}</span>
               {config.infections > 0 && (
-                <>&nbsp;·&nbsp;HAI: <span style={{ color: "#ff0040" }}>{config.infections}</span></>
+                <>&nbsp;·&nbsp;Inf: <span style={{ color: "#EF9A9A" }}>{config.infections}</span></>
               )}
             </div>
           </div>
         </Html>
-      )}
-
-      {/* Window grid effect */}
-      {Array.from({ length: Math.floor(w / 1.2) }).map((_, xi) =>
-        Array.from({ length: Math.floor(h / 1.2) }).map((_, yi) => (
-          <mesh
-            key={`${xi}-${yi}`}
-            position={[
-              -w / 2 + 0.8 + xi * 1.2,
-              -h / 2 + 0.8 + yi * 1.2,
-              d / 2 + 0.01,
-            ]}
-          >
-            <planeGeometry args={[0.55, 0.55]} />
-            <meshBasicMaterial
-              color={isAlert && Math.random() > 0.5 ? "#ff2040" : config.color}
-              transparent
-              opacity={0.12 + Math.random() * 0.08}
-            />
-          </mesh>
-        ))
       )}
     </group>
   );
@@ -364,23 +338,31 @@ function Lights() {
   );
 }
 
-// ─── Camera controller ────────────────────────────────────────────────────────
-function CameraRig({ selectedWard }: { selectedWard: WardStatus | null }) {
-  const { camera } = useThree();
+// ─── Backend ward flag type ───────────────────────────────────────────────────
+export interface WardFlag {
+  ward_id: string;
+  risk_score: number;
+  status: "normal" | "warning" | "critical";
+  infection_type?: string;
+  flagged: boolean;
+}
 
-  useEffect(() => {
-    if (!selectedWard) return;
-    const config = WARD_CONFIG.find(w => w.id === selectedWard.id);
-    if (!config) return;
-    const target = new THREE.Vector3(...(config.pos as [number, number, number]));
-    // soft camera approach could be added with GSAP; for now just note target
-  }, [selectedWard]);
+// ─── Backend ward_id → frontend mesh IDs ─────────────────────────────────────
+const BACKEND_TO_FRONTEND: Record<string, string[]> = {
+  "icu-01":   ["icu_1", "icu_2"],
+  "gen-01":   ["ward_a", "ward_b"],
+  "surg-01":  ["surgery_1", "surgery_2"],
+  "pedi-01":  ["pediatric"],
+  "emer-01":  ["emergency"],
+  "amb-01":   [],
+};
 
-  return null;
+interface ScenePropsExtended extends SceneProps {
+  wardFlags: Record<string, WardFlag>;
 }
 
 // ─── Main 3D scene ────────────────────────────────────────────────────────────
-function Scene({ selectedWard, alerts = [], onWardClick, wards = [], floorFilter }: SceneProps) {
+function Scene({ selectedWard, alerts = [], onWardClick, wards = [], floorFilter, wardFlags }: ScenePropsExtended) {
   const alertIds = useMemo(() => new Set(alerts.map(a => a.id)), [alerts]);
   const wardMap  = useMemo(() => {
     const m: Record<string, WardStatus> = {};
@@ -419,11 +401,14 @@ function Scene({ selectedWard, alerts = [], onWardClick, wards = [], floorFilter
         .map(config => {
         const wd = wardMap[config.id];
         const overrideAlertScore = alerts.find(a => a.id === config.id);
+        const backendFlag = wardFlags[config.id];
         const effectiveWard: WardStatus = wd ?? {
           id: config.id,
           name: config.name,
           isAlert: alertIds.has(config.id),
-          anomalyScore: overrideAlertScore
+          anomalyScore: backendFlag
+            ? backendFlag.risk_score
+            : overrideAlertScore
             ? overrideAlertScore.anomalyScore
             : config.infections > 2
             ? 0.75
@@ -442,21 +427,19 @@ function Scene({ selectedWard, alerts = [], onWardClick, wards = [], floorFilter
             isSelected={selectedWard?.id === config.id}
             isAlert={alertIds.has(config.id)}
             onClick={() => onWardClick(config.id)}
+            backendStatus={backendFlag?.status}
+            infectionType={backendFlag?.infection_type}
           />
         );
       })}
 
-      {/* Post processing */}
+      {/* Post processing — Bloom only (ChromaticAberration removed for LOD) */}
       <EffectComposer>
         <Bloom
-          intensity={1.2}
-          luminanceThreshold={0.3}
+          intensity={0.8}
+          luminanceThreshold={0.4}
           luminanceSmoothing={0.9}
           blendFunction={BlendFunction.SCREEN}
-        />
-        <ChromaticAberration
-          blendFunction={BlendFunction.NORMAL}
-          offset={[0.0005, 0.0005] as unknown as THREE.Vector2}
         />
       </EffectComposer>
     </>
@@ -471,6 +454,29 @@ export const HospitalMap: React.FC<HospitalMapProps> = ({
   wards = [],
 }) => {
   const [floorFilter, setFloorFilter] = useState<number | null>(null);
+  // Per-mesh ward flags keyed by frontend mesh ID
+  const [wardFlags, setWardFlags] = useState<Record<string, WardFlag>>({});
+
+  useEffect(() => {
+    const fetchFlags = async () => {
+      try {
+        const res = await fetch("/api/ward-flags");
+        if (!res.ok) return;
+        const data: { flags: WardFlag[] } = await res.json();
+        const mapped: Record<string, WardFlag> = {};
+        data.flags.forEach(flag => {
+          const meshIds = BACKEND_TO_FRONTEND[flag.ward_id] ?? [];
+          meshIds.forEach(meshId => { mapped[meshId] = flag; });
+        });
+        setWardFlags(mapped);
+      } catch {
+        // Backend not available — fall back to static data silently
+      }
+    };
+    fetchFlags();
+    const interval = setInterval(fetchFlags, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     // Changed height from "100%" to "100vh" to ensure it actually renders on screen
@@ -532,7 +538,8 @@ export const HospitalMap: React.FC<HospitalMapProps> = ({
             alerts={alerts}
             onWardClick={onWardClick}
             wards={wards}
-            floorFilter={floorFilter} // Pass filter state to scene
+            floorFilter={floorFilter}
+            wardFlags={wardFlags}
           />
         </Suspense>
         

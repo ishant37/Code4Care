@@ -24,6 +24,9 @@ recent_lab_tests = []
 recent_infection_logs = []
 generated_alerts = set()
 
+# Latest anomaly results — read by /api/ward-flags endpoint
+latest_anomaly_results: list = []
+
 
 async def simulate_data_generation():
     """
@@ -72,8 +75,8 @@ async def simulate_anomaly_detection():
     """
     Background task: Run anomaly detection and send alerts.
     """
-    print("🔍 Starting anomaly detection service...")
-    global recent_lab_tests, recent_infection_logs, generated_alerts
+    print("Starting anomaly detection service...")
+    global recent_lab_tests, recent_infection_logs, generated_alerts, latest_anomaly_results
 
     while True:
         try:
@@ -83,6 +86,10 @@ async def simulate_anomaly_detection():
                 recent_lab_tests,
                 recent_infection_logs,
             )
+
+            # Expose latest results for the REST API (mutate in-place so imports stay live)
+            latest_anomaly_results.clear()
+            latest_anomaly_results.extend(results)
 
             # Process results and send updates
             for result in results:

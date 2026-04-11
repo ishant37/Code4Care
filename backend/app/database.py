@@ -1,9 +1,10 @@
+import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ASCENDING
 import asyncio
 
-MONGO_URL = "mongodb://localhost:27017"
-DB_NAME = "hiss_hospital"
+MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+DB_NAME = os.getenv("DB_NAME", "hiss_hospital")
 
 client: AsyncIOMotorClient = None
 db = None
@@ -38,7 +39,10 @@ async def create_indexes():
         await db.users.create_index([("username", ASCENDING)], unique=True)
         await db.wards.create_index([("ward_id", ASCENDING)], unique=True)
         await db.alerts.create_index([("timestamp", ASCENDING)])
-        print("✅ Database indexes created")
+        await db.patient_records.create_index([("patient_id", ASCENDING)])
+        await db.patient_records.create_index([("ward_id", ASCENDING)])
+        await db.patient_records.create_index([("risk_score", ASCENDING)])
+        print("Database indexes created")
     except Exception as e:
         print(f"Index creation error: {e}")
 

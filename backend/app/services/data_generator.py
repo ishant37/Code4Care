@@ -1,10 +1,11 @@
+import hashlib
 import random
 from datetime import datetime, timedelta
 from typing import List
 import pandas as pd
 import numpy as np
 
-from app.models.schemas import LabTestResult, InfectionLog
+from app.models.schemas import LabTestResult, InfectionLog, DISHAPatientRecord
 
 # ==================== Mock Data Generators ====================
 
@@ -129,6 +130,75 @@ def generate_mock_clinical_data(
             infection_logs.append(infection_log)
 
     return lab_tests, infection_logs
+
+
+def _anonymize_patient_id(seed: str) -> str:
+    """Pseudonymize patient ID using SHA-256 — no real PHI stored."""
+    h = hashlib.sha256(seed.encode()).hexdigest()[:6].upper()
+    return f"PAT-{h}"
+
+
+# Ward-level risk weights used by DISHA synthetic data
+_WARD_RISK_WEIGHTS = {
+    "icu-01":  (0.55, 0.45),   # (mean, std) — high risk
+    "emer-01": (0.50, 0.40),
+    "surg-01": (0.35, 0.30),
+    "gen-01":  (0.25, 0.25),
+    "pedi-01": (0.20, 0.20),
+    "amb-01":  (0.10, 0.15),
+}
+
+
+def generate_disha_patient_records(num_records: int = 50) -> List[DISHAPatientRecord]:
+    """
+    Generate DISHA-compliant anonymized synthetic patient records.
+    Each record includes a pseudonymized patient_id, ward_id, infection_type,
+    risk_score (simulated Isolation Forest output), and DISHA compliance flags.
+    """
+    records: List[DISHAPatientRecord] = []
+    wards = list(WARD_INFO.keys())
+
+    for i in range(num_records):
+        ward_id = random.choice(wards)
+        ward_name = WARD_INFO[ward_id]["name"]
+
+        # Pseudonymize patient identity
+        raw_id = f"{ward_id}-{i}-{random.randint(100000, 999999)}"
+        patient_id = _anonymize_patient_id(raw_id)
+
+        # Simulate Isolation Forest risk score using ward-specific distribution
+        mean, std = _WARD_RISK_WEIGHTS.get(ward_id, (0.25, 0.25))
+        risk_score = float(np.clip(np.random.normal(mean, std), 0.0, 1.0))
+        flagged = risk_score >= 0.6
+
+        is_infected = risk_score > 0.3 or random.random() < 0.15
+        infection_type = random.choice(INFECTION_TYPES) if is_infected else None
+        organism = random.choice(ORGANISMS) if is_infected else None
+
+        onset_date = datetime.utcnow() - timedelta(days=random.randint(0, 14))
+
+        records.append(DISHAPatientRecord(
+            patient_id=patient_id,
+            ward_id=ward_id,
+            ward_name=ward_name,
+            infection_type=infection_type,
+            risk_score=round(risk_score, 4),
+            isolation_forest_flag=flagged,
+            specimen_type=random.choice(["Blood", "Urine", "Wound", "Sputum"]),
+            organism=organism,
+            antibiotic_resistant=random.random() < 0.08,
+            onset_date=onset_date,
+            status=random.choices(
+                ["suspected", "confirmed", "resolved"],
+                weights=[0.30, 0.50, 0.20],
+            )[0],
+            severity=random.choices(
+                ["mild", "moderate", "severe"],
+                weights=[0.40, 0.40, 0.20],
+            )[0],
+        ))
+
+    return records
 
 
 def calculate_hospital_stats(

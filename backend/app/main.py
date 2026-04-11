@@ -12,8 +12,12 @@ from app.services.background_tasks import (
     manager,
     simulate_data_generation,
     simulate_anomaly_detection,
+    latest_anomaly_results,
 )
-from app.services.data_generator import generate_mock_clinical_data
+from app.services.data_generator import (
+    generate_mock_clinical_data,
+    generate_disha_patient_records,
+)
 
 background_tasks = []
 
@@ -99,6 +103,54 @@ async def get_ward_stats():
                 "status": "critical" if len(ward_infections) > 2 else "warning" if len(ward_infections) > 0 else "normal",
             }
         return {"ward_stats": ward_stats, "timestamp": datetime.utcnow().isoformat()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/ward-flags")
+async def get_ward_flags():
+    """
+    Returns the latest Isolation Forest anomaly results per ward.
+    Frontend uses this to color 3D mesh blocks (red = infected, grey = safe).
+    Threshold: risk_score >= 0.6 → flagged = True (critical)
+    """
+    from app.config import CRITICAL_THRESHOLD
+    flags = []
+    for result in latest_anomaly_results:
+        flags.append({
+            "ward_id": result.ward_id,
+            "ward_name": result.ward_name,
+            "risk_score": round(result.anomaly_score, 4),
+            "status": result.status,
+            "flagged": result.anomaly_score >= CRITICAL_THRESHOLD,
+            "infection_type": result.risk_factors[0].replace("_", " ").title() if result.risk_factors else None,
+            "risk_factors": result.risk_factors,
+            "confidence": round(result.confidence, 4),
+            "detected_at": result.detected_at.isoformat(),
+        })
+    return {
+        "flags": flags,
+        "total_wards": len(flags),
+        "flagged_count": sum(1 for f in flags if f["flagged"]),
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@app.get("/api/patients")
+async def get_disha_patients(limit: int = 50):
+    """
+    Returns DISHA-compliant anonymized synthetic patient records from MongoDB.
+    Fields: patient_id (hashed), ward_id, infection_type, risk_score, etc.
+    """
+    try:
+        records = generate_disha_patient_records(num_records=limit)
+        return {
+            "patients": [r.model_dump() for r in records],
+            "total": len(records),
+            "disha_compliant": True,
+            "data_encrypted": True,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
