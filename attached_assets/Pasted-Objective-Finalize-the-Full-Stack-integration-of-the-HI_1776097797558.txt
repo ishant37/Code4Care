@@ -1,0 +1,42 @@
+Objective: Finalize the Full-Stack integration of the HISS (Hospital Infection Surveillance System). Connect the FastAPI backend services (AI anomaly detection, FHIR data) to the React/Three.js frontend for a live demo.
+
+1. API Configuration & Connectivity:
+
+Update HOSPITAL/src/services/api.js to use import.meta.env.VITE_API_URL for the baseURL.
+
+In the backend main.py, ensure CORS is configured to allow requests from the frontend's origin (especially for Replit/Vercel URLs).
+
+2. 3D Map & AI Data Mapping:
+
+Modify HospitalScene.tsx and Ward.tsx to fetch data from the /api/ward-flags endpoint every 15 seconds.
+
+Logic: Map the ward_id from the API response to the 3D mesh names. If flagged: true, change the material color to Bright Red (0xff0000). If flagged: false, use a Neutral Semi-Transparent Green.
+
+Remove/Comment out the 3 empty routes in the 3D scene to keep the UI clean as per the updated design.
+
+3. Real-Time WebSocket Alerts:
+
+Connect the Dashboard.tsx to the backend WebSocket (/ws).
+
+When an anomaly message is received, trigger a Toast notification or an entry in the AlertSidebar.tsx immediately without refreshing the page.
+
+4. DISHA/FHIR Compliance Showcase:
+
+Update the PatientAudit component (or create it) to display data from the /api/patients endpoint.
+
+Display a "DISHA Verified" badge and show the fhir_compliant status for each record to prove the system follows Indian healthcare standards.
+
+5. Deployment Optimization:
+
+Verify that requirements.txt is complete for the backend (include fastapi, uvicorn, motor, scikit-learn, pandas).
+
+Ensure the .replit or Dockerfile correctly starts both the FastAPI server (port 8000) and the Vite frontend (port 3000).
+
+Deliverable: A fully connected MERN/FastAPI system where the 3D map reacts dynamically to AI-detected infection risks in the backend.
+
+Why this prompt works for your 2-day deadline:
+Focus on Visualization: The 3D map changing color is the "hero" of your project. This prompt ensures that the AI actually drives the visual.
+
+Compliance: Mentioning DISHA and FHIR explicitly in the code/UI is what makes this a "4th Year" caliber project rather than just a hobby app.
+
+Stability: By moving keys to environment variables, you avoid the common "it worked on my machine but not on the server" disaster.
