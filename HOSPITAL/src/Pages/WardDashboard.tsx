@@ -42,6 +42,15 @@ const Dashboard: React.FC = () => {
   const [wards, setWards]               = useState<WardStatus[]>(FALLBACK_WARDS);
   const [time, setTime]                 = useState(new Date());
   const [wsConnected, setWsConnected]   = useState(true);
+  const [error, setError]               = useState<string | null>(null);
+
+  // Lifecycle logging
+  useEffect(() => {
+    console.log("🎯 Dashboard mounted - User:", user?.username);
+    return () => {
+      console.warn("⚠️ Dashboard unmounting - Check if this is unexpected!");
+    };
+  }, [user]);
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -51,7 +60,9 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
+        console.log("📡 Fetching wards from API...");
         const res = await getWards();
+        console.log("✅ Wards fetched:", res.data);
         if (res.data?.wards) {
           const mapped: WardStatus[] = res.data.wards.map((w: any) => ({
             id: w.id, name: w.name, isAlert: false, anomalyScore: Math.random() * 0.8,
@@ -59,13 +70,17 @@ const Dashboard: React.FC = () => {
           setWards(mapped);
           setSelectedWard(mapped[0]);
         }
-      } catch { }
+      } catch (err) {
+        console.warn("⚠️ Failed to fetch wards (using fallback):", err);
+        // Continue with fallback data
+      }
     })();
   }, []);
 
   useEffect(() => {
     let ws: WebSocket | null = null;
     try {
+      console.log("🔌 Connecting to WebSocket...");
       ws = connectWebSocket(
         (data: any) => {
           setWsConnected(true);
@@ -77,9 +92,15 @@ const Dashboard: React.FC = () => {
             setWards(prev => prev.map(w => w.id === data.payload.wardId ? { ...w, anomalyScore: scoreMap[data.payload.status] ?? w.anomalyScore, isAlert: data.payload.status !== "normal" } : w));
           }
         },
-        () => setWsConnected(false)
+        () => {
+          console.warn("⚠️ WebSocket error or disconnection");
+          setWsConnected(false);
+        }
       );
-    } catch { setWsConnected(false); }
+    } catch (err) {
+      console.error("❌ WebSocket connection error:", err);
+      setWsConnected(false);
+    }
     return () => { ws?.close(); };
   }, []);
 
@@ -102,6 +123,20 @@ const Dashboard: React.FC = () => {
       <SideNavbar />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+
+        {/* ERROR DISPLAY */}
+        {error && (
+          <div style={{
+            background: "#C62828", color: "#FFFFFF",
+            padding: "12px 24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexShrink: 0, zIndex: 30,
+            fontWeight: 600,
+          }}>
+            <span>⚠️ Error: {error}</span>
+            <button onClick={() => setError(null)} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#FFFFFF", cursor: "pointer", padding: "4px 8px", borderRadius: 4 }}>✕</button>
+          </div>
+        )}
 
         {/* CRITICAL BANNER */}
         {critCount > 0 && (

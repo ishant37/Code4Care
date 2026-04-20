@@ -381,7 +381,6 @@ function Scene({ selectedWard, alerts = [], onWardClick, wards = [], floorFilter
   return (
     <>
       <Lights />
-      <CameraRig selectedWard={selectedWard} />
       <Ground />
 
       {/* Floor plates - Only show if floorFilter matches or is null */}
@@ -456,6 +455,7 @@ export const HospitalMap: React.FC<HospitalMapProps> = ({
   const [floorFilter, setFloorFilter] = useState<number | null>(null);
   // Per-mesh ward flags keyed by frontend mesh ID
   const [wardFlags, setWardFlags] = useState<Record<string, WardFlag>>({});
+  const [renderError, setRenderError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFlags = async () => {
@@ -469,8 +469,9 @@ export const HospitalMap: React.FC<HospitalMapProps> = ({
           meshIds.forEach(meshId => { mapped[meshId] = flag; });
         });
         setWardFlags(mapped);
-      } catch {
-        // Backend not available — fall back to static data silently
+      } catch (err) {
+        console.warn("Failed to fetch ward flags (using default):", err);
+        // Fall back silently
       }
     };
     fetchFlags();
@@ -478,9 +479,21 @@ export const HospitalMap: React.FC<HospitalMapProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  if (renderError) {
+    return (
+      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#020a14", color: "#ff0040", flexDirection: "column", gap: 16 }}>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>⚠️ Render Error</div>
+        <div style={{ fontSize: 12, color: "#ffaa00", maxWidth: "80%", textAlign: "center" }}>{renderError}</div>
+        <button onClick={() => window.location.reload()} style={{ background: "#1565C0", color: "#FFFFFF", border: "none", padding: "8px 16px", borderRadius: 4, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+          Reload Page
+        </button>
+      </div>
+    );
+  }
+
   return (
-    // Changed height from "100%" to "100vh" to ensure it actually renders on screen
-    <div style={{ width: "100%", height: "100vh", position: "relative", background: "#020a14" }}>
+    // Container fills parent flex container properly
+    <div style={{ width: "100%", height: "100%", position: "relative", background: "#020a14" }}>
       {/* Floor filter pills */}
       <div style={{
         position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
@@ -526,11 +539,17 @@ export const HospitalMap: React.FC<HospitalMapProps> = ({
         camera={{ position: [18, 18, 18], fov: 50, near: 0.1, far: 200 }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.8 }}
         style={{ background: "#020a14" }}
+        onCreated={(state) => {
+          console.log("✅ Canvas created successfully");
+          state.gl.setClearColor("#020a14");
+        }}
       >
         {/* Added Suspense boundary for Text / Html components */}
         <Suspense fallback={
           <Html center>
-            <div style={{ color: "#00d4ff", fontFamily: "monospace" }}>Loading 3D Map...</div>
+            <div style={{ color: "#00d4ff", fontFamily: "monospace", fontSize: 14 }}>
+              ⏳ Initializing 3D Hospital Map...
+            </div>
           </Html>
         }>
           <Scene

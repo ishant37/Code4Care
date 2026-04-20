@@ -120,12 +120,11 @@ export default function SideNavbar() {
   return (
     <aside style={{
       width: W, minWidth: W,
-      height: "100vh",
+      height: "100%",
       background: COLORS.sidebarBg,
       borderRight: `1px solid ${COLORS.sidebarBorder}`,
       display: "flex", flexDirection: "column",
       transition: "width 0.3s cubic-bezier(0.4,0,0.2,1), min-width 0.3s cubic-bezier(0.4,0,0.2,1)",
-      position: "sticky", top: 0,
       overflow: "hidden",
       boxShadow: "4px 0 20px rgba(0,0,0,0.25)",
       zIndex: 40,
