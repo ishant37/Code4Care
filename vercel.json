@@ -1,0 +1,8 @@
+{
+  "buildCommand": "cd HOSPITAL && npm install && npm run build",
+  "outputDirectory": "HOSPITAL/dist",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

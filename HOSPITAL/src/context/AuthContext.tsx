@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { loginUser, getMe } from "../services/api";
+import { createContext, useContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
+import { MOCK_CREDENTIALS } from "../services/mockData";
 
 interface User {
   username: string;
@@ -23,33 +24,32 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser]       = useState<User | null>(null);
+  const [token, setToken]     = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("hiss_token");
     const storedUser = localStorage.getItem("hiss_user");
-    if (stored && storedUser) {
-      setToken(stored);
+    if (storedUser) {
       setUser(JSON.parse(storedUser));
+      setToken("demo-token");
     }
     setLoading(false);
   }, []);
 
   const login = async (username: string, password: string) => {
-    const res = await loginUser(username, password);
-    const { access_token, user: userData } = res.data;
-    setToken(access_token);
-    setUser(userData);
-    localStorage.setItem("hiss_token", access_token);
-    localStorage.setItem("hiss_user", JSON.stringify(userData));
+    const entry = MOCK_CREDENTIALS[username.toLowerCase()];
+    if (!entry || entry.password !== password) {
+      throw new Error("Invalid username or password");
+    }
+    setToken("demo-token");
+    setUser(entry.user);
+    localStorage.setItem("hiss_user", JSON.stringify(entry.user));
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("hiss_token");
     localStorage.removeItem("hiss_user");
   };
 
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       login,
       logout,
-      isDoctor: user?.role === "doctor",
+      isDoctor:  user?.role === "doctor",
       isWardMan: user?.role === "wardman",
     }}>
       {children}

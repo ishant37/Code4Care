@@ -579,7 +579,7 @@ const AlertDashboard: React.FC = () => {
           <div style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid #ECEFF1", padding: "14px 16px" }}>
             <SectionHeader label="Infections Over Time" accent="#1565C0" />
             <ResponsiveContainer width="100%" height={130}>
-              <AreaChart data={timeRange === "24h" ? HOURLY_DATA : WEEKLY_DATA.map(d => ({ ...d, infections: d.icu + d.general + d.surgery + d.emergency, alerts: d.icu }))}>
+              <AreaChart data={(timeRange === "24h" ? HOURLY_DATA : WEEKLY_DATA.map(d => ({ ...d, hour: d.day, infections: d.icu + d.general + d.surgery + d.emergency, alerts: d.icu, resolved: 0, positivity: 0 }))) as typeof HOURLY_DATA}>
                 <defs>
                   <linearGradient id="infGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#1565C0" stopOpacity={0.2}/>

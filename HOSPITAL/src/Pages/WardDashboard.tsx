@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import SideNavbar from "./Navbar";
 import { HospitalMap } from "./Dashboard";
 import AlertDashboard from "./AlertDashboard";
-import { getWards, connectWebSocket } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { INITIAL_WARDS, startSimulation } from "../services/mockData";
 
 interface WardStatus {
   id: string;
@@ -13,14 +13,6 @@ interface WardStatus {
   anomalyScore: number;
 }
 
-const FALLBACK_WARDS: WardStatus[] = [
-  { id: "icu_2",     name: "ICU Ward 2",    isAlert: true,  anomalyScore: 0.89 },
-  { id: "emergency", name: "Emergency",     isAlert: true,  anomalyScore: 0.73 },
-  { id: "isolation", name: "Isolation",     isAlert: true,  anomalyScore: 0.91 },
-  { id: "icu_1",     name: "ICU Ward 1",    isAlert: false, anomalyScore: 0.31 },
-  { id: "ward_a",    name: "General Ward A",isAlert: false, anomalyScore: 0.38 },
-  { id: "pediatric", name: "Pediatrics",    isAlert: false, anomalyScore: 0.18 },
-];
 
 type ViewMode = "3d-map" | "alerts";
 
@@ -37,71 +29,37 @@ const DOCTOR_PHONE = "+91 6367690519";
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [viewMode, setViewMode]         = useState<ViewMode>("3d-map");
-  const [selectedWard, setSelectedWard] = useState<WardStatus>(FALLBACK_WARDS[0]);
-  const [liveAlerts, setLiveAlerts]     = useState<WardStatus[]>(FALLBACK_WARDS.filter(w => w.isAlert));
-  const [wards, setWards]               = useState<WardStatus[]>(FALLBACK_WARDS);
+  const [selectedWard, setSelectedWard] = useState<WardStatus>(INITIAL_WARDS[0]);
+  const [liveAlerts, setLiveAlerts]     = useState<WardStatus[]>(INITIAL_WARDS.filter(w => w.isAlert));
+  const [wards, setWards]               = useState<WardStatus[]>(INITIAL_WARDS);
   const [time, setTime]                 = useState(new Date());
   const [wsConnected, setWsConnected]   = useState(true);
   const [error, setError]               = useState<string | null>(null);
-
-  // Lifecycle logging
-  useEffect(() => {
-    console.log("🎯 Dashboard mounted - User:", user?.username);
-    return () => {
-      console.warn("⚠️ Dashboard unmounting - Check if this is unexpected!");
-    };
-  }, [user]);
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  // Live simulation — replaces WebSocket + backend
   useEffect(() => {
-    (async () => {
-      try {
-        console.log("📡 Fetching wards from API...");
-        const res = await getWards();
-        console.log("✅ Wards fetched:", res.data);
-        if (res.data?.wards) {
-          const mapped: WardStatus[] = res.data.wards.map((w: any) => ({
-            id: w.id, name: w.name, isAlert: false, anomalyScore: Math.random() * 0.8,
-          }));
-          setWards(mapped);
-          setSelectedWard(mapped[0]);
-        }
-      } catch (err) {
-        console.warn("⚠️ Failed to fetch wards (using fallback):", err);
-        // Continue with fallback data
+    setWsConnected(true);
+    const stop = startSimulation((type, payload: any) => {
+      if (type === "alert") {
+        const a: WardStatus = {
+          id: payload.wardId, name: payload.wardName,
+          isAlert: true, anomalyScore: 0.85,
+        };
+        setLiveAlerts(prev => prev.find(x => x.id === a.id) ? prev : [...prev, a]);
+      } else if (type === "update") {
+        setWards(prev => prev.map(w =>
+          w.id === payload.wardId
+            ? { ...w, anomalyScore: payload.score, isAlert: payload.score >= 0.6 }
+            : w
+        ));
       }
-    })();
-  }, []);
-
-  useEffect(() => {
-    let ws: WebSocket | null = null;
-    try {
-      console.log("🔌 Connecting to WebSocket...");
-      ws = connectWebSocket(
-        (data: any) => {
-          setWsConnected(true);
-          if (data.type === "alert") {
-            const a: WardStatus = { id: data.payload.wardId, name: data.payload.wardName, isAlert: true, anomalyScore: data.payload.severity === "critical" ? 0.9 : 0.6 };
-            setLiveAlerts(prev => prev.find(x => x.id === a.id) ? prev : [...prev, a]);
-          } else if (data.type === "update") {
-            const scoreMap: Record<string, number> = { critical: 0.85, warning: 0.55, normal: 0.25 };
-            setWards(prev => prev.map(w => w.id === data.payload.wardId ? { ...w, anomalyScore: scoreMap[data.payload.status] ?? w.anomalyScore, isAlert: data.payload.status !== "normal" } : w));
-          }
-        },
-        () => {
-          console.warn("⚠️ WebSocket error or disconnection");
-          setWsConnected(false);
-        }
-      );
-    } catch (err) {
-      console.error("❌ WebSocket connection error:", err);
-      setWsConnected(false);
-    }
-    return () => { ws?.close(); };
+    });
+    return stop;
   }, []);
 
   const handleWardClick = useCallback((wardId: string) => {

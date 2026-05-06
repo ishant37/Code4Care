@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { getWards } from "../services/api";
+
 
 const DEFAULT_WARDS = [
   { name: "ICU Ward",    status: "critical", count: 3 },
@@ -89,17 +89,6 @@ export default function HomePage() {
 
   useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
 
-  useEffect(() => {
-    getWards().then(res => {
-      if (res.data?.wards) {
-        setWards(res.data.wards.map((w: any, i: number) => ({
-          name: w.name,
-          status: i % 3 === 0 ? "critical" : i % 3 === 1 ? "warning" : "normal",
-          count: i % 3 === 0 ? Math.floor(Math.random() * 4) + 1 : 0,
-        })));
-      }
-    }).catch(() => {});
-  }, []);
 
   return (
     <div style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif", background: "#F0F4F8", minHeight: "100vh", color: "#1A2332" }}>

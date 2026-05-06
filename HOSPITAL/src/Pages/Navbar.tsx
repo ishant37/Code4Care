@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -65,7 +65,7 @@ const Icon = {
 interface NavItem {
   label: string;
   path: string;
-  icon: () => JSX.Element;
+  icon: () => React.ReactElement;
   badge?: number | string;
   badgeColor?: string;
   roles?: ("doctor" | "wardman")[];
